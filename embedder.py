@@ -19,7 +19,7 @@ class Embedder:
                 **chunk.metadata,
                 "source": chunk.source,
                 "id": chunk.id,
-                # "raw_text": chunk.raw_text
+                "raw_text": chunk.raw_text
             }
             for chunk in chunks
         ]
