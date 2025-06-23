@@ -1,8 +1,7 @@
 import os
 import re
 from llama_cpp import Llama
-from config import *
-
+from .config import *
 class LLMGenerator:
     def __init__(self, model_path: str = MODEL_PATH, n_ctx: int = N_CTX, verbose: bool = False) -> None:
         """Initialize the Llama model."""
