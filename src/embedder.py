@@ -7,19 +7,23 @@ import json
 
 
 class Embedder:
-    def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
+    def __init__(self, model_name: str = 'sentence-transformers/msmarco-MiniLM-L12-cos-v5'): #= "sentence-transformers/all-MiniLM-L6-v2"):
         self.model = SentenceTransformer(model_name)
+
+    def encode(self, texts: List[str]) -> np.ndarray:
+        """Encodes a list of texts into embeddings."""
+        return self.model.encode(texts) #show_progress_bar=True)
 
     def embed_chunks(self, chunks: List[DocumentChunk]) -> Tuple[np.ndarray, List[dict]]:
         texts = [chunk.text for chunk in chunks]
-        embeddings = self.model.encode(texts, show_progress_bar=True)
+        embeddings = self.encode(texts)#, show_progress_bar=True)
 
         metadata = [
             {
                 **chunk.metadata,
                 "source": chunk.source,
                 "id": chunk.id,
-                "raw_text": chunk.raw_text
+                "text": chunk.text
             }
             for chunk in chunks
         ]
