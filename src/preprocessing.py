@@ -63,8 +63,6 @@ class MarkdownPreprocessor:
         docs = splitter.split_text(content)
 
         chunks = []
-        
-        pos = 0
 
         for doc in docs:
             # Update header path
@@ -78,10 +76,6 @@ class MarkdownPreprocessor:
                 cleaned_header = self._clean_header(text)
                 if cleaned_header:
                     metadata[level] = cleaned_header
-
-            start = content.find(raw_text, pos)
-            end = start + len(raw_text)
-            pos = end
 
             chunk = DocumentChunk(
                 id=str(uuid.uuid4()),
@@ -112,7 +106,6 @@ if __name__ == "__main__":
     chunks = preprocessor.load_all_markdown()
 
     print(f"Total chunks: {len(chunks)}")
-    print(chunks[0].model_dump(mode='json'))  # Print first chunk as example
 
     # Optional: Save to disk
     import json
