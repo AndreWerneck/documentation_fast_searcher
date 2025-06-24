@@ -1,7 +1,7 @@
 import os
 import re
 from llama_cpp import Llama
-from .config import *
+from config import *
 class LLMGenerator:
     def __init__(self, model_path: str = MODEL_PATH, n_ctx: int = N_CTX, verbose: bool = False) -> None:
         """Initialize the Llama model."""
@@ -43,6 +43,10 @@ class LLMGenerator:
             cleaned_response = re.sub(pattern, '', cleaned_response, flags=re.IGNORECASE).strip()
 
         return cleaned_response
+    
+    def count_tokens(self, prompt: str) -> int:
+        """Returns the number of tokens in the input string."""
+        return len(self.llm.tokenize(prompt.encode("utf-8")))
 
     def llmgenerate(self, prompt: str, max_tokens: int = MAX_TOKENS, temperature: float = TEMPERATURE) -> str:
         """Queries the LLM model and returns the cleaned response."""
