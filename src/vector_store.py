@@ -36,7 +36,7 @@ class VectorStore:
 
 if __name__ == "__main__":
     
-    from sentence_transformers import SentenceTransformer
+    from embedder import Embedder
 
     # Load embeddings and metadata
     vectors = np.load("data/embeddings.npy")
@@ -49,12 +49,12 @@ if __name__ == "__main__":
     store.save("data")
 
     # Embed a test query
-    model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    query = "What is InstanceCount?"
-    query_vec = model.encode([query])
+    embedder = Embedder()
+    query = "What is SageMaker?"
+    query_vec = embedder.encode([query])
 
     # Search
     results = store.search(query_vec, top_k=3)
     for i, (idx, dist, meta) in enumerate(results):
         print(f"\nResult {i+1} — Distance: {dist:.4f}")
-        print(meta["raw_text"])
+        print(meta["text"])
