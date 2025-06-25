@@ -4,7 +4,9 @@ import uuid
 from pathlib import Path
 from typing import List, Optional
 from bs4 import BeautifulSoup
-from langchain_text_splitters import MarkdownHeaderTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter, MarkdownHeaderTextSplitter
+from langchain_experimental.text_splitter import SemanticChunker
+from langchain_huggingface import HuggingFaceEmbeddings
 
 class DocumentChunk(BaseModel):
     id : str
@@ -17,28 +19,24 @@ class DocumentChunk(BaseModel):
 class MarkdownPreprocessor:
     def __init__(self, input_dir: str):
         self.input_dir = Path(input_dir)
+        self.embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/multi-qa-mpnet-base-cos-v1")
 
-    def load_all_markdown(self) -> List[DocumentChunk]:
+    def load_all_markdown(self, chunking_type:str = 'semantic') -> List[DocumentChunk]:
         chunks = []
         for md_file in self.input_dir.glob("*.md"):
-            file_chunks = self._process_markdown_file(md_file)
+            file_chunks = self._process_markdown_file(md_file, chunking_type=chunking_type)
             chunks.extend(file_chunks)
         return chunks
 
     def _clean_header(self, header: str) -> str:
-        # Try to extract name attribute from <a> tag
-        soup = BeautifulSoup(header, "html.parser")
-        anchor = soup.find("a")
-
-        if anchor and anchor.has_attr("name"):
-            return anchor["name"]
-        
-        # Fallback to header text if no <a name=...>
+        soup = BeautifulSoup(header, "html.parser")        
         return soup.get_text(strip=True).replace("#", "").strip()
 
-
-    def _clean_chunk_text(self, text: str) -> str:
-    # Remove code blocks
+    def _clean_text(self, text: str) -> str:
+        # Remove HTML tags
+        soup = BeautifulSoup(text, "html.parser")
+        text = soup.get_text()
+        # Remove code blocks
         text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
 
         # Remove inline code
@@ -46,41 +44,43 @@ class MarkdownPreprocessor:
 
         # Normalize whitespace
         text = re.sub(r"\n{2,}", "\n", text)
-        text = text.strip()
-
-        return text
+        return text.strip()
     
-    def _process_markdown_file(self, filepath: Path) -> List[DocumentChunk]:
+    def _process_markdown_file(self, filepath: Path, chunking_type:str = 'semantic') -> List[DocumentChunk]:
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
         
-        splitter = MarkdownHeaderTextSplitter(headers_to_split_on=[
-            ("#", "title"),
-            ("##", "section"),
-            ("###", "subsection"),
-            ("####", "subsubsection")
-        ])
-        docs = splitter.split_text(content)
+        cleaned_content = self._clean_text(content)
+
+        if chunking_type == 'headers':
+            text_splitter = MarkdownHeaderTextSplitter(
+                headers_to_split_on=[
+                    # ("#", "title"),
+                    ("##", "section"),
+                ]
+            )
+            raw_docs = text_splitter.split_text(cleaned_content)
+        
+        elif chunking_type == 'recursive':
+            text_splitter = RecursiveCharacterTextSplitter(
+                separators=[". ", "! ", "? ", ".\n","?\n","!\n"],
+                chunk_size=2048,
+                chunk_overlap=128,
+            )
+            raw_docs = text_splitter.create_documents([cleaned_content])
+        else: # semantic
+            text_splitter = SemanticChunker(embeddings=self.embedding_model)
+
+            raw_docs = text_splitter.create_documents([cleaned_content])
 
         chunks = []
-
-        for doc in docs:
+        for doc in raw_docs:
             # Update header path
             metadata = doc.metadata
-            raw_text = doc.page_content
-            clean_text = self._clean_chunk_text(raw_text)
-            if not clean_text:
-                continue
-
-            for level, text in metadata.items():
-                cleaned_header = self._clean_header(text)
-                if cleaned_header:
-                    metadata[level] = cleaned_header
-
+            text = doc.page_content
             chunk = DocumentChunk(
                 id=str(uuid.uuid4()),
-                text=clean_text,
-                raw_text=raw_text.strip(),
+                text=text,
                 source=filepath.name,
                 metadata=metadata.copy(),
             )
@@ -88,18 +88,18 @@ class MarkdownPreprocessor:
 
         return chunks
 
-    def _split_markdown_by_headers(self, content: str) -> List[tuple[str, str]]:
-        # Regex to capture headers and the text that follows them
-        pattern = r"(#{1,6} .+?)\n(?:(?!(?:#{1,6} )).*\n?)*"
-        matches = re.finditer(pattern, content, re.MULTILINE)
+    # def _split_markdown_by_headers(self, content: str) -> List[tuple[str, str]]:
+    #     # Regex to capture headers and the text that follows them
+    #     pattern = r"(#{1,6} .+?)\n(?:(?!(?:#{1,6} )).*\n?)*"
+    #     matches = re.finditer(pattern, content, re.MULTILINE)
 
-        sections = []
-        for match in matches:
-            header_line = match.group(0).splitlines()[0]
-            body = match.group(0)[len(header_line):].strip()
-            sections.append((header_line, body))
+    #     sections = []
+    #     for match in matches:
+    #         header_line = match.group(0).splitlines()[0]
+    #         body = match.group(0)[len(header_line):].strip()
+    #         sections.append((header_line, body))
 
-        return sections
+    #     return sections
 
 if __name__ == "__main__":
     preprocessor = MarkdownPreprocessor("sagemaker_documentation")

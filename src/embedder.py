@@ -5,9 +5,8 @@ from preprocessing import DocumentChunk
 import numpy as np
 import json
 
-
 class Embedder:
-    def __init__(self, model_name: str = 'sentence-transformers/msmarco-MiniLM-L12-cos-v5'): #= "sentence-transformers/all-MiniLM-L6-v2"):
+    def __init__(self, model_name: str = 'sentence-transformers/multi-qa-mpnet-base-cos-v1'): #= "sentence-transformers/all-MiniLM-L6-v2"):
         self.model = SentenceTransformer(model_name)
 
     def encode(self, texts: List[str]) -> np.ndarray:
