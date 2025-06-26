@@ -36,7 +36,7 @@ class VectorStore:
 
 if __name__ == "__main__":
     
-    from embedder import Embedder
+    from dense_embedder import DenseEmbedder
 
     # Load embeddings and metadata
     vectors = np.load("data/embeddings.npy")
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     store.save("data")
 
     # Embed a test query
-    embedder = Embedder()
+    embedder = DenseEmbedder()
     query = "What is SageMaker?"
     query_vec = embedder.encode([query])
 
