@@ -1,8 +1,7 @@
-
-import numpy as np
-import json
+from sentence_transformers.cross_encoder import CrossEncoder
 from vector_store import VectorStore
-from embedder import Embedder
+from dense_embedder import DenseEmbedder
+from sparse_embedder import BM25Retriever
 from generator import LLMGenerator
 from config import MAX_TOKENS
 
@@ -13,45 +12,66 @@ def format_prompt(query: str, contexts: list[dict]) -> str:
         for i, chunk in enumerate(contexts)
     )
 
-    prompt = f"""You are a helpful assistant answering questions about AWS SageMaker documentation. Base your answers on the provided context.
-    If the context does not contain enough information, you can answer with "I don't know". If the context is not relevant, you can also answer with "context not relevant for this query".
-    Lastly, if you are sure about the answer, you can answer even if the information is not in the context.
-    There is always just one question, so do not answer multiple questions at once.
-    Give concise and accurate answers.
+    return f"""You are a helpful assistant answering questions about AWS SageMaker documentation. Base your answers on the provided context.
+If the context does not contain enough information, you can answer with "I don't know".
+Lastly, if you are sure about the answer, you can answer even if the information is not in the context.
+There is always just one question, so do not answer multiple questions at once.
+Give concise and accurate answers.
 
 Context:
 {context_str}
 
 Question: {query}
 Answer:"""
-    return prompt
 
 def main():
-    # Load embedder and generator
-    embedder = Embedder()
+    # Initialize components
+    dense_embedder = DenseEmbedder()
+    sparse_embedder = BM25Retriever()
     generator = LLMGenerator()
+    reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L6-v2")
 
-    # Get user query
+    # --- Step 1: Get user query ---
     query = input("🔍 Ask your question: ")
 
-    # Embed and search
-    query_vec = embedder.encode([query])
-    # Load vector store
+    # --- Step 2: Retrieve from dense store ---
+    query_vec = dense_embedder.encode([query])
     store = VectorStore(dim=query_vec.shape[1])
     store.load("data")
-    top_results = store.search(query_vec, top_k=5)
+    dense_results = store.search(query_vec, top_k=5)
+    dense_chunks = [meta for _, _, meta in dense_results]
 
-    # Format context
-    context_chunks = [meta for _, _, meta in top_results]
-    prompt = format_prompt(query, context_chunks)
+    # --- Step 3: Retrieve from sparse BM25 ---
+    sparse_embedder.load("data")
+    sparse_results = sparse_embedder.search(query, top_k=5)
+    sparse_chunks = [meta for _, meta in sparse_results]
 
-    print("Token count:", generator.count_tokens(prompt))
+    # --- Step 4: Merge and deduplicate ---
+    all_candidates = {doc["id"]: doc for doc in dense_chunks + sparse_chunks}
+    candidate_chunks = list(all_candidates.values())
 
-    # Generate response
+    # --- Step 5: Rerank ---
+    rerank_inputs = [(query, chunk["text"]) for chunk in candidate_chunks]
+    scores = reranker.predict(rerank_inputs)
+
+    for chunk, score in zip(candidate_chunks, scores):
+        chunk["score"] = float(score)
+
+    top_reranked = sorted(candidate_chunks, key=lambda x: x["score"], reverse=True)[:5]
+
+    # --- Step 6: Format and generate response ---
+    prompt = format_prompt(query, top_reranked)
+    print("🧮 Token count:", generator.count_tokens(prompt))
+
     print("\n🧠 Generating answer...\n")
     answer = generator.llmgenerate(prompt=prompt, max_tokens=MAX_TOKENS)
+
     print("✅ Answer:\n")
     print(answer)
+    print('\n')
+    print(f'Source for the answer: {top_reranked[0]["source"]}')
+    print('\n')
+    print(f"Other possible relevant sources for further reading: {', '.join(chunk['source'] for chunk in top_reranked[1:])}")
 
 if __name__ == "__main__":
     main()
