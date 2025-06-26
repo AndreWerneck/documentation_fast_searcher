@@ -3,7 +3,8 @@ import numpy as np
 from pathlib import Path
 
 from preprocessing import MarkdownPreprocessor
-from embedder import Embedder
+from dense_embedder import DenseEmbedder
+from sparse_embedder import BM25Retriever
 from vector_store import VectorStore
 
 OUTPUT_DIR = "data"
@@ -17,7 +18,7 @@ def run_pipeline(input_dir: str = "sagemaker_documentation"):
         json.dump([chunk.model_dump(mode='json') for chunk in chunks], f, indent=2, ensure_ascii=False)
 
     print("🧠 Step 2: Embedding chunks...")
-    embedder = Embedder()
+    embedder = DenseEmbedder()
     vectors, metadata = embedder.embed_chunks(chunks)
     print(f"✅ Embeddings shape: {vectors.shape}")
 
@@ -31,6 +32,11 @@ def run_pipeline(input_dir: str = "sagemaker_documentation"):
     store = VectorStore(dim=vectors.shape[1])
     store.add(vectors, metadata)
     store.save(OUTPUT_DIR)
+
+    print("📚 Step 5: Building BM25 sparse index...")
+    bm25 = BM25Retriever()
+    bm25.build(chunks)
+    bm25.save(OUTPUT_DIR)
 
     print("✅ Pipeline completed successfully!")
 
