@@ -41,7 +41,7 @@ While the primary use case is search and Q&A over AWS documentation, the archite
                       │
               Final Answer + Sources
 ```
-
+---
 The system follows a Retrieval-Augmented Generation (RAG) pattern, which combines a document retriever and a text generator:
 	1.	Preprocessing & Chunking (preprocessing.py)
 Markdown files are parsed into clean text, split into manageable chunks, and saved with metadata for later retrieval.
