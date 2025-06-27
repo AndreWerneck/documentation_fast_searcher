@@ -19,7 +19,7 @@ While the primary use case is search and Q&A over AWS documentation, the archite
 
 ## How to Run the Project
 
-First of all, clone this repo then follow the instructions given below.  
+First of all, clone this repo, enter the repo folder and then follow the instructions given below.  
 
 ### Setup
 
@@ -33,6 +33,15 @@ source venv/bin/activate
 pip install -r requirements.txt
 python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
 ```
+### Installing the LLM
+
+Run the command line below:
+
+```bash
+python llm_install.py
+```
+
+This may take sometime depeding on your machine. Please, be patient.
 
 ### Building the Index
 
