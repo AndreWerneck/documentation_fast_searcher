@@ -9,9 +9,9 @@ The current implementation uses AWS documentation to simulate this scenario and 
 ## Project Motivation
 
 Engineering teams often face productivity bottlenecks when navigating vast and complex documentation. This project aims to:
-	•	Provide instant, accurate answers to user questions based on existing documentation.
-	•	Reduce interruptions to experienced engineers.
-	•	Ensure responses remain consistent and up-to-date with the latest documents.
+	-	Provide instant, accurate answers to user questions based on existing documentation.
+	-	Reduce interruptions to experienced engineers.
+	-	Ensure responses remain consistent and up-to-date with the latest documents.
 
 While the primary use case is search and Q&A over AWS documentation, the architecture is built with flexibility and scalability in mind, enabling easy extension to internal, private datasets.
 
@@ -44,20 +44,20 @@ While the primary use case is search and Q&A over AWS documentation, the archite
 
 The system follows a Retrieval-Augmented Generation (RAG) pattern, which combines a document retriever and a text generator:    
 1.	Preprocessing & Chunking (preprocessing.py)
-Markdown files are parsed into clean text, split into manageable chunks, and saved with metadata for later retrieval.
+    - Markdown files are parsed into clean text, split into manageable chunks, and saved with metadata for later retrieval.
 2.	Indexing Phase (build_index.py)
-	•	Dense embeddings are generated using sentence-transformers.
-	•	Sparse BM25 vectors are computed using rank_bm25.
-	•	Metadata, chunks, and indexes are stored to disk.
+    -	Dense embeddings are generated using sentence-transformers.
+	-	Sparse BM25 vectors are computed using rank_bm25.
+	-	Metadata, chunks, and indexes are stored to disk.
 3.	Retrieval Layer
-	•	sparse_embedder.py: Performs keyword-based retrieval with BM25.
-	•	dense_embedder.py: Retrieves semantically relevant chunks.
-	•	vector_store.py: Uses FAISS to index and encapsulate logic for vector semantic search with cosine-similarity.
+	-	sparse_embedder.py: Performs keyword-based retrieval with BM25.
+	-	dense_embedder.py: Retrieves semantically relevant chunks.
+	-	vector_store.py: Uses FAISS to index and encapsulate logic for vector semantic search with cosine-similarity.
 4.	Reranking (Late Fusion) (generator.py)
-Retrieved results are reranked using a cross-encoder model (cross-encoder/ms-marco-MiniLM-L6-v2) to select the most relevant chunks.
+    - Retrieved results are reranked using a cross-encoder model (cross-encoder/ms-marco-MiniLM-L6-v2) to select the most relevant chunks.
 5.	Prompt Construction + LLM Response
-Top-k reranked chunks are used to form the prompt.
-Generation is handled locally via llama-cpp-python, running quantized Mistral-7B-Instruct in GGUF format from the models/ directory.
+    - Top-k reranked chunks are used to form the prompt.
+    - Generation is handled locally via llama-cpp-python, running quantized Mistral-7B-Instruct in GGUF format from the models/ directory.
 
 ---
 
@@ -95,9 +95,9 @@ Make sure you have Python 3.10+ installed. Then run:
 bash setup.sh
 
 This script will:
-	•	Create a virtual environment
-	•	Install dependencies
-	•	Download necessary NLTK packages
+	-	Create a virtual environment
+	-	Install dependencies
+	-	Download necessary NLTK packages
 
 Alternatively, install everything manually:
 
@@ -123,19 +123,19 @@ You’ll be prompted to enter a question.
 ⸻
 
 🧰 Tooling Choices Justified
-	•	sentence-transformers + FAISS: Efficient dense vector search; captures semantic similarity.
-	•	rank_bm25: Lightweight sparse retriever to complement dense search.
-	•	Hybrid Retrieval + Cross-Encoder Reranker: Increases precision of retrieved results.
-	•	llama-cpp-python with Mistral-7B-Instruct GGUF: Allows fully local LLM inference, critical for privacy and geographical constraints.
+	-	sentence-transformers + FAISS: Efficient dense vector search; captures semantic similarity.
+	-	rank_bm25: Lightweight sparse retriever to complement dense search.
+	-	Hybrid Retrieval + Cross-Encoder Reranker: Increases precision of retrieved results.
+	-	llama-cpp-python with Mistral-7B-Instruct GGUF: Allows fully local LLM inference, critical for privacy and geographical constraints.
 
 This design ensures flexibility across use cases, including ones with sensitive or private data.
 
 ⸻
 
 🧠 Design Decisions
-	•	Chunking Strategy: Documents are split by paragraphs and further chunked into 300-400 token windows. This provides contextual coverage without exceeding LLM context limits.
-	•	Late Fusion Reranking: Dense and sparse results are merged and then re-ranked using a cross-encoder for optimal relevance.
-	•	Local Model Inference: Chosen to avoid data leakage and support air-gapped environments.
+	-	Chunking Strategy: Documents are split by paragraphs and further chunked into 300-400 token windows. This provides contextual coverage without exceeding LLM context limits.
+	-	Late Fusion Reranking: Dense and sparse results are merged and then re-ranked using a cross-encoder for optimal relevance.
+	-	Local Model Inference: Chosen to avoid data leakage and support air-gapped environments.
 
 ⸻
 
@@ -146,14 +146,14 @@ Evaluation scripts (evaluate_retrieval.py) allow assessment of retrieval quality
 ⸻
 
 ✅ What’s Production-Ready?
-	•	Modular pipeline: easy to adapt/extend.
-	•	Local model loading and offline inference.
-	•	Efficient document indexing and hybrid search.
+	-	Modular pipeline: easy to adapt/extend.
+	-	Local model loading and offline inference.
+	-	Efficient document indexing and hybrid search.
 
 🚧 What’s Missing
-	•	No web interface or API (could be added via FastAPI)
-	•	No continuous ingestion pipeline for updated documents.
-	•	No fine-tuning or domain-specific retriever optimization.
+	-	No web interface or API (could be added via FastAPI)
+	-	No continuous ingestion pipeline for updated documents.
+	-	No fine-tuning or domain-specific retriever optimization.
 
 ⸻
 
