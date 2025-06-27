@@ -2,9 +2,19 @@ import os
 import re
 from llama_cpp import Llama
 from config import *
+
 class LLMGenerator:
+    """A class to interact with the Llama model for text generation."""
+
     def __init__(self, model_path: str = MODEL_PATH, n_ctx: int = N_CTX, verbose: bool = False) -> None:
-        """Initialize the Llama model."""
+        """Initialize the Llama model.
+        Args:
+            model_path (str): Path to the Llama model file.
+            n_ctx (int): Context size for the model.
+            verbose (bool): Whether to print verbose output.
+        Raises:
+            FileNotFoundError: If the model file does not exist.
+        """
         if os.path.exists(model_path):
             self.llm = Llama(
                 model_path=model_path,
@@ -16,12 +26,17 @@ class LLMGenerator:
                 repeat_penalty=REPEPETITION_PENALTY,
                 n_threads=os.cpu_count()
             )
-            print("✅ LLM Loaded Successfully")
+            print("LLM Loaded Successfully")
         else:
-            raise FileNotFoundError("❌ Model file not found! Download it to 'models/'")
+            raise FileNotFoundError("Model file not found! Download it to 'models/'")
 
     def output_parser(self, raw_response: str) -> str:
-        """Cleans up LLM output by removing unwanted characters and expression patterns."""
+        """Cleans up LLM output by removing unwanted characters and expression patterns.
+        Args:
+            raw_response (str): The raw response from the LLM.
+        Returns:
+            str: A cleaned version of the response.
+        """
         if not raw_response:
             return ""
 
@@ -49,7 +64,14 @@ class LLMGenerator:
         return len(self.llm.tokenize(prompt.encode("utf-8")))
 
     def llmgenerate(self, prompt: str, max_tokens: int = MAX_TOKENS, temperature: float = TEMPERATURE) -> str:
-        """Queries the LLM model and returns the cleaned response."""
+        """Queries the LLM model and returns the cleaned response.
+        Args:
+            prompt (str): The input prompt for the LLM.
+            max_tokens (int): Maximum number of tokens to generate.
+            temperature (float): Sampling temperature for generation.
+        Returns:
+            str: The cleaned response from the LLM.
+        """
         raw_response = self.llm(
             prompt,
             max_tokens=max_tokens,

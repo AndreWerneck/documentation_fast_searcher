@@ -9,6 +9,9 @@ from langchain_experimental.text_splitter import SemanticChunker
 from langchain_huggingface import HuggingFaceEmbeddings
 
 class DocumentChunk(BaseModel):
+    """ Represents a chunk of text extracted from a document.
+    Each chunk has an ID, text content, raw text (optional), source file name, and metadata.
+    """
     id : str
     text : str
     raw_text : Optional[str] = None
@@ -17,11 +20,21 @@ class DocumentChunk(BaseModel):
     
 
 class MarkdownPreprocessor:
+    """ Preprocesses markdown files in a given directory.
+    It can load all markdown files, clean their content, and split them into chunks based on
+    different chunking strategies (semantic, headers, or recursive).
+    """
     def __init__(self, input_dir: str):
         self.input_dir = Path(input_dir)
         self.embedding_model = HuggingFaceEmbeddings(model_name="sentence-transformers/multi-qa-mpnet-base-cos-v1")
 
     def load_all_markdown(self, chunking_type:str = 'semantic') -> List[DocumentChunk]:
+        """ Loads all markdown files from the input directory and processes them into chunks.
+        Args:
+            chunking_type (str): The type of chunking to apply. Options are 'semantic', 'headers', or 'recursive'.
+        Returns:
+            List[DocumentChunk]: A list of DocumentChunk objects containing the processed text chunks.
+        """
         chunks = []
         for md_file in self.input_dir.glob("*.md"):
             file_chunks = self._process_markdown_file(md_file, chunking_type=chunking_type)
@@ -29,10 +42,22 @@ class MarkdownPreprocessor:
         return chunks
 
     def _clean_header(self, header: str) -> str:
+        """ Cleans a markdown header by removing the leading hash symbols and whitespace.
+        Args:
+            header (str): The markdown header string to clean.
+        Returns:
+            str: The cleaned header text.
+        """
         soup = BeautifulSoup(header, "html.parser")        
         return soup.get_text(strip=True).replace("#", "").strip()
 
     def _clean_text(self, text: str) -> str:
+        """ Cleans the markdown text by removing HTML tags, code blocks, inline code, and normalizing whitespace.
+        Args:
+            text (str): The markdown text to clean.
+        Returns:
+            str: The cleaned text.
+        """
         # Remove HTML tags
         soup = BeautifulSoup(text, "html.parser")
         text = soup.get_text()
@@ -47,6 +72,13 @@ class MarkdownPreprocessor:
         return text.strip()
     
     def _process_markdown_file(self, filepath: Path, chunking_type:str = 'semantic') -> List[DocumentChunk]:
+        """ Processes a single markdown file, cleaning its content and splitting it into chunks.
+        Args:
+            filepath (Path): The path to the markdown file to process.
+            chunking_type (str): The type of chunking to apply. Options are 'semantic', 'headers', or 'recursive'.
+        Returns:
+            List[DocumentChunk]: A list of DocumentChunk objects containing the processed text chunks.
+        """
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
         
@@ -88,26 +120,13 @@ class MarkdownPreprocessor:
 
         return chunks
 
-    # def _split_markdown_by_headers(self, content: str) -> List[tuple[str, str]]:
-    #     # Regex to capture headers and the text that follows them
-    #     pattern = r"(#{1,6} .+?)\n(?:(?!(?:#{1,6} )).*\n?)*"
-    #     matches = re.finditer(pattern, content, re.MULTILINE)
-
-    #     sections = []
-    #     for match in matches:
-    #         header_line = match.group(0).splitlines()[0]
-    #         body = match.group(0)[len(header_line):].strip()
-    #         sections.append((header_line, body))
-
-    #     return sections
-
 if __name__ == "__main__":
-    preprocessor = MarkdownPreprocessor("sagemaker_documentation")
+    preprocessor = MarkdownPreprocessor("../sagemaker_documentation")
     chunks = preprocessor.load_all_markdown()
 
     print(f"Total chunks: {len(chunks)}")
 
     # Optional: Save to disk
     import json
-    with open("data/chunks.json", "w", encoding="utf-8") as f:
+    with open("../data/chunks.json", "w", encoding="utf-8") as f:
         json.dump([chunk.model_dump(mode='json') for chunk in chunks], f, indent=2, ensure_ascii=False)

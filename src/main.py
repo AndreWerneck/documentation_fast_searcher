@@ -6,7 +6,12 @@ from generator import LLMGenerator
 from config import MAX_TOKENS
 
 def format_prompt(query: str, contexts: list[dict]) -> str:
-    """Constructs the prompt with retrieved contexts and user query."""
+    """Constructs the prompt with retrieved contexts and user query.
+    Args:
+        query (str): The user's question.
+        contexts (list[dict]): List of context chunks with 'text' and 'source'.
+    Returns:
+        str: Formatted prompt string."""
     context_str = "\n\n".join(
         f"Chunk {i+1}:\n{chunk['text'].strip()}"
         for i, chunk in enumerate(contexts)
@@ -25,6 +30,12 @@ Question: {query}
 Answer:"""
 
 def main():
+    """
+    Main function to run the question-answering pipeline.
+    This function initializes the components, retrieves relevant documents,
+    reranks them, and generates an answer based on the user's query.
+    Run it just if you have already built the index with `build_index.py`.
+    """
     # Initialize components
     dense_embedder = DenseEmbedder()
     sparse_embedder = BM25Retriever()
@@ -32,7 +43,7 @@ def main():
     reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L6-v2")
 
     # --- Step 1: Get user query ---
-    query = input("🔍 Ask your question: ")
+    query = input("Ask your question: ")
 
     # --- Step 2: Retrieve from dense store ---
     query_vec = dense_embedder.encode([query])
@@ -61,12 +72,12 @@ def main():
 
     # --- Step 6: Format and generate response ---
     prompt = format_prompt(query, top_reranked)
-    print("🧮 Token count:", generator.count_tokens(prompt))
+    print("Token count:", generator.count_tokens(prompt))
 
-    print("\n🧠 Generating answer...\n")
+    print("\n Generating answer...\n")
     answer = generator.llmgenerate(prompt=prompt, max_tokens=MAX_TOKENS)
 
-    print("✅ Answer:\n")
+    print("Answer:\n")
     print(answer)
     print('\n')
     print(f'Source for the answer: {top_reranked[0]["source"]}')
