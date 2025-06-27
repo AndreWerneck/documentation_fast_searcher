@@ -41,21 +41,21 @@ While the primary use case is search and Q&A over AWS documentation, the archite
                       │
               Final Answer + Sources
 ```
----
-The system follows a Retrieval-Augmented Generation (RAG) pattern, which combines a document retriever and a text generator:
-	1.	Preprocessing & Chunking (preprocessing.py)
+
+The system follows a Retrieval-Augmented Generation (RAG) pattern, which combines a document retriever and a text generator:    
+1.	Preprocessing & Chunking (preprocessing.py)
 Markdown files are parsed into clean text, split into manageable chunks, and saved with metadata for later retrieval.
-	2.	Indexing Phase (build_index.py)
+2.	Indexing Phase (build_index.py)
 	•	Dense embeddings are generated using sentence-transformers.
 	•	Sparse BM25 vectors are computed using rank_bm25.
 	•	Metadata, chunks, and indexes are stored to disk.
-	3.	Retrieval Layer
+3.	Retrieval Layer
 	•	sparse_embedder.py: Performs keyword-based retrieval with BM25.
 	•	dense_embedder.py: Retrieves semantically relevant chunks.
 	•	vector_store.py: Uses FAISS to index and encapsulate logic for vector semantic search with cosine-similarity.
-	4.	Reranking (Late Fusion) (generator.py)
+4.	Reranking (Late Fusion) (generator.py)
 Retrieved results are reranked using a cross-encoder model (cross-encoder/ms-marco-MiniLM-L6-v2) to select the most relevant chunks.
-	5.	Prompt Construction + LLM Response
+5.	Prompt Construction + LLM Response
 Top-k reranked chunks are used to form the prompt.
 Generation is handled locally via llama-cpp-python, running quantized Mistral-7B-Instruct in GGUF format from the models/ directory.
 
