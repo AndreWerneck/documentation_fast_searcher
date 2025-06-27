@@ -51,7 +51,7 @@ Here, you have two options: If you're gonna test this repo in the dataset alread
 python src/build_index.py
 ```
 
-This will process and chunk the raw documents, compute embeddings, and store chunks, indexes and metadata in the data/ folder. As by default I'm using semantic chunking it will take around 4 minutes for the this step (as for my machine Macbook Air M4 16gb ram 256 ssd).
+This will process and chunk the raw documents, compute embeddings, and store chunks, indexes and metadata in the data/ folder. As by default I'm using semantic chunking it will take between 4 and 8 minutes for the this step (as for my machine Macbook Air M4 16gb ram 256 ssd).
 
 ### Running the QA Pipeline
 
