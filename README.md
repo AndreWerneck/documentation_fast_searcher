@@ -1,10 +1,19 @@
-# Documentation Assistant – RAG-based QA System
+# Documentation Q&A Assistant
 
-This project is a **Retrieval-Augmented Generation (RAG)** system built as a technical proof of concept. It helps developers query and understand AWS SageMaker documentation efficiently by combining **hybrid retrieval (dense + sparse)**, **reranking**, and a **local LLM-based generator**.
+This project is a lightweight, modular proof-of-concept (PoC) system designed to assist developers in navigating large technical documentation efficiently. It targets the common pain point of developers spending too much time searching for information or relying on colleagues for answers that are often buried in internal documents.
 
-## Objective
+The current implementation uses AWS documentation to simulate this scenario and demonstrates a pipeline that integrates preprocessing, hybrid document retrieval (sparse + dense), and local large language model (LLM) generation.
 
-To demonstrate how (even a lightweight) RAG system can help developers reduce time spent searching documentation by providing accurate, source-grounded answers using natural language queries.
+⸻
+
+## Project Motivation
+
+Engineering teams often face productivity bottlenecks when navigating vast and complex documentation. This project aims to:
+	•	Provide instant, accurate answers to user questions based on existing documentation.
+	•	Reduce interruptions to experienced engineers.
+	•	Ensure responses remain consistent and up-to-date with the latest documents.
+
+While the primary use case is search and Q&A over AWS documentation, the architecture is built with flexibility and scalability in mind, enabling easy extension to internal, private datasets.
 
 ---
 
@@ -31,27 +40,7 @@ To demonstrate how (even a lightweight) RAG system can help developers reduce ti
              └────────┬────────┘
                       │
               Final Answer + Sources
-
-# Documentation Q&A Assistant
-
-This project is a lightweight, modular proof-of-concept (PoC) system designed to assist developers in navigating large technical documentation efficiently. It targets the common pain point of developers spending too much time searching for information or relying on colleagues for answers that are often buried in internal documents.
-
-The current implementation uses AWS documentation to simulate this scenario and demonstrates a pipeline that integrates preprocessing, hybrid document retrieval (sparse + dense), and local large language model (LLM) generation.
-
-⸻
-
-🧠 Project Motivation
-
-Engineering teams often face productivity bottlenecks when navigating vast and complex documentation. This project aims to:
-	•	Provide instant, accurate answers to user questions based on existing documentation.
-	•	Reduce interruptions to experienced engineers.
-	•	Ensure responses remain consistent and up-to-date with the latest documents.
-
-While the primary use case is search and Q&A over AWS documentation, the architecture is built with flexibility and scalability in mind, enabling easy extension to internal, private datasets.
-
-⸻
-
-🏗️ Architecture Overview
+```
 
 The system follows a Retrieval-Augmented Generation (RAG) pattern, which combines a document retriever and a text generator:
 	1.	Preprocessing & Chunking (preprocessing.py)
@@ -62,13 +51,36 @@ Markdown files are parsed into clean text, split into manageable chunks, and sav
 	•	Metadata, chunks, and indexes are stored to disk.
 	3.	Retrieval Layer
 	•	sparse_embedder.py: Performs keyword-based retrieval with BM25.
-	•	dense_embedder.py: Retrieves semantically relevant chunks with FAISS.
-	•	vector_store.py: Encapsulates logic for combining retrieval outputs.
+	•	dense_embedder.py: Retrieves semantically relevant chunks.
+	•	vector_store.py: Uses FAISS to index and encapsulate logic for vector semantic search with cosine-similarity.
 	4.	Reranking (Late Fusion) (generator.py)
-Retrieved results are reranked using a cross-encoder model (cross-encoder/ms-marco-MiniLM-L6-en-de-v1) to select the most relevant chunks.
+Retrieved results are reranked using a cross-encoder model (cross-encoder/ms-marco-MiniLM-L6-v2) to select the most relevant chunks.
 	5.	Prompt Construction + LLM Response
 Top-k reranked chunks are used to form the prompt.
-Generation is handled locally via llama-cpp-python, running Mistral-7B-Instruct in GGUF format from the models/ directory.
+Generation is handled locally via llama-cpp-python, running quantized Mistral-7B-Instruct in GGUF format from the models/ directory.
+
+### Project Structure
+```
+.
+├── data/                  # Stored embeddings, chunks, and indexes
+├── models/                # Local model files (GGUF)
+├── src/
+│   ├── init.py                  # Source code
+│   ├── preprocessing.py
+│   ├── build_index.py
+│   ├── vector_store.py
+│   ├── dense_embedder.py
+│   ├── sparse_embedder.py
+│   ├── evaluate_retrieval.py
+│   ├── generator.py
+│   ├── main.py
+│   ├── config.py
+│   ├── docs_fast_searcher.ipynb  # notebook for seeing answers for suggested questions and to play with the solution
+├── llm_install.py         # Local model loader using llama-cpp
+├── tests/                # Unit tests
+├── requirements.txt      # Dependencies
+└── README.md
+```
 
 ⸻
 
@@ -158,26 +170,6 @@ Run tests using:
 pytest tests/
 
 
-⸻
-
-📁 Project Structure
-
-.
-├── data/                  # Stored embeddings, chunks, and indexes
-├── models/                # Local model files (GGUF)
-├── src/                   # Source code
-│   ├── preprocessing.py
-│   ├── build_index.py
-│   ├── vector_store.py
-│   ├── dense_embedder.py
-│   ├── sparse_embedder.py
-│   ├── generator.py
-│   ├── main.py
-│   ├── config.py
-├── llm_install.py         # Local model loader using llama-cpp
-├── tests/                # Unit tests
-├── requirements.txt      # Dependencies
-└── README.md
 
 
 ⸻
