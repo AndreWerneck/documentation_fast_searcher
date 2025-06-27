@@ -17,6 +17,45 @@ While the primary use case is search and Q&A over AWS documentation, the archite
 
 ---
 
+## How to Run the Project
+
+First of all, clone this repo then follow the instructions given below.  
+
+### Setup
+
+This project is made for MacOS and Linux only. 
+Make sure you have Python 3.10+ installed. 
+Then run:
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
+```
+
+### Building the Index
+
+Here, you have two options: If you're gonna test this repo in the dataset already present here, you can skip this step because the indexing is already made (got to Running the QA Pipeline). Otherwise, if you want to test it in another dataset or update the current one, you need to turn in command line: 
+
+```bash
+python src/build_index.py
+```
+
+This will process and chunk the raw documents, compute embeddings, and store chunks, indexes and metadata in the data/ folder. As by default I'm using semantic chunking it will take around 4 minutes for the this step (as for my machine Macbook Air M4 16gb ram 256 ssd).
+
+### Running the QA Pipeline
+
+You can test the full retrieval + generation flow using:
+
+```bash
+python src/main.py
+```
+
+You’ll be prompted to enter a question. After it the system will prompt the token count and the answer alongside with the main source and related files for further reading. 
+
+---
+
 ## Architecture Overview
 
 ```text
@@ -83,43 +122,6 @@ The system follows a Retrieval-Augmented Generation (RAG) pattern, which combine
 ├── requirements.txt      # Dependencies
 └── README.md
 ```
-
----
-
-## How to Run the Project
-
-### Setup
-
-This project is made for MacOS and Linux only. 
-Make sure you have Python 3.10+ installed. 
-Then run:
-
-```bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab')"
-```
-
-### Building the Index
-
-Here, you have two options: If you're gonna test this repo in the dataset already present here, you can skip this step because the indexing is already made (got to Running the QA Pipeline). Otherwise, if you want to test it in another dataset or update the current one, you need to turn in command line: 
-
-```bash
-python src/build_index.py
-```
-
-This will process and chunk the raw documents, compute embeddings, and store chunks, indexes and metadata in the data/ folder. As by default I'm using semantic chunking it will take around 4 minutes for the this step (as for my machine Macbook Air M4 16gb ram 256 ssd).
-
-### Running the QA Pipeline
-
-You can test the full retrieval + generation flow using:
-
-```bash
-python src/main.py
-```
-
-You’ll be prompted to enter a question. After it the system will prompt the token count and the answer alongside with the main source and related files for further reading. 
 
 --- 
 
