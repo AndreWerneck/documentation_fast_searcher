@@ -137,49 +137,110 @@ This design ensures flexibility across use cases, including ones with sensitive 
 
 ---
 
-🧪 Evaluation
+## Evaluation
 
-Evaluation scripts (evaluate_retrieval.py) allow assessment of retrieval quality using a small QA set. Metrics like hit rate, top-k coverage, and reranking gain are considered. This can be extended with ground-truth annotations or relevance feedback in a production setting.
+Retrieval quality can be assessed using the **evaluate_retrieval.py** script, which returns top results from both dense and sparse retrievers for a given query. This enabled human-in-the-loop validation throughout development using a sort of hit rate inspection. The evaluation process could be extended to labeled data, allowing for the computation of standard IR metrics such as Precision@k, Recall@k, and nDCG to quantitatively measure retrieval effectiveness.
 
-⸻
+From a production-readiness standpoint, the system already implements a modular pipeline that is easy to adapt or extend. It supports local model loading and fully offline inference, which is important for cost control and future compliance with sensitive documentation constraints. The indexing step is efficient, and the hybrid retrieval pipeline combining dense and sparse retrieval followed by reranking is a robust foundation.
 
-✅ What’s Production-Ready?
-	-	Modular pipeline: easy to adapt/extend.
-	-	Local model loading and offline inference.
-	-	Efficient document indexing and hybrid search.
+However, a few components would need to be implemented to move this from a proof-of-concept to a production-grade system. Currently, there is no web interface or API, which could be added using Docker + FastAPI to enable easy integration with frontend tools. There is also no continuous ingestion pipeline to handle documentation updates, meaning that the index would need to be manually rebuilt when documents change.
 
-🚧 What’s Missing
-	-	No web interface or API (could be added via FastAPI)
-	-	No continuous ingestion pipeline for updated documents.
-	-	No fine-tuning or domain-specific retriever optimization.
+--- 
 
-⸻
-
-🔄 Updating the Knowledge Base
+## Updating the Knowledge Base
 
 The system can be re-indexed periodically using the same build_index.py script. Future iterations could support real-time indexing and invalidation of outdated chunks.
 
-⸻
+---
 
-🧪 Tests
+## Tests
 
 Basic tests are included in the tests/ folder to validate key components of the system such as the generator pipeline.
 
 Run tests using:
-
+```bash
 pytest tests/
+```
+
+---
+
+## Results for suggested queries
+
+You can see the answer and play with the Q&A assitent at **src/docs_fast_searcher.ipynb**.
+
+- **What is SageMaker?**
+```text
+Token count: 1268
+
+Generating answer...
+
+Answer:
+
+Amazon SageMaker is a fully managed service that enables developers and data scientists to build, train, and deploy machine learning models. It provides integrated Jupyter authoring notebook instances for easy access to data sources and eliminates the need to manage servers.
 
 
+Source for the answer: examples-sagemaker.md
 
 
-⸻
+Other possible relevant sources for further reading: integrating-sagemaker.md, sagemaker-projects-whatis.md, kubernetes-sagemaker-jobs.md, sagemaker-projects.md
+```
 
-🤝 Contributions
+- **What are all AWS regions where SageMaker is available?**
+```text
+Token count: 1791
 
-Pull requests and suggestions welcome. This project is meant to grow with evolving needs in document Q&A and retrieval systems.
+Generating answer...
 
-⸻
+Answer:
 
-📜 License
+SageMaker is available in all supported AWS regions except Asia Pacific (Jakarta), Africa (Cape Town), Middle East (UAE), Asia Pacific (Hyderabad), Asia Pacific (Osaka), Asia Pacific (Melbourne), Europe (Milan), AWS GovCloud (US-East), Europe (Spain), China (Beijing), China (Ningxia), and Europe (Zurich) Region.
 
-MIT License.
+
+Source for the answer: sagemaker-notebook-no-direct-internet-access.md
+
+
+Other possible relevant sources for further reading: sagemaker-notebook-instance-inside-vpc.md, sagemaker-compliance.md, aws-properties-sagemaker-model-containerdefinition.md, sagemaker-projects-whatis.md
+```
+
+- **How to check if an endpoint is KMS encrypted?**
+```text
+Token count: 2011
+
+Generating answer...
+
+Answer:
+
+You can check the compliance of an Amazon SageMaker endpoint configuration regarding KMS encryption using AWS Config rules such as 'sagemaker-endpoint-configuration-kms-key-configured'. If the rule returns NON_COMPLIANT, then the KMS key is not configured for the endpoint configuration.
+
+
+Source for the answer: sagemaker-roles.md
+
+
+Other possible relevant sources for further reading: sagemaker-endpoint-configuration-kms-key-configured.md, aws-properties-sagemaker-featuregroup-onlinestoreconfig.md, aws-properties-sagemaker-modelpackage-transformresources.md, kubernetes-sagemaker-components-tutorials.md
+```
+
+- **What are SageMaker Geospatial capabilities?**
+```text
+Token count: 1355
+
+Generating answer...
+
+Answer:
+
+SageMaker Geospatial capabilities are features of Amazon SageMaker that perform geospatial operations on your behalf using the AWS hardware managed by SageMaker. They can only perform operations that the user permits and require an execution role with the appropriate permissions to access AWS resources.
+
+
+Source for the answer: sagemaker-geospatial-roles.md
+
+
+Other possible relevant sources for further reading: sagemaker-geospatial-roles.md, integrating-sagemaker.md, examples-sagemaker.md, sagemaker-projects-whatis.md
+```
+
+You can see that the answers are quite good and are also well related to the documentation. For sure, with better models the whole pipeline would be better, from chunking to generating the answer. But anyway I would say that this POC accomplished its objectives by generating good enough answers in a reasonable time even running in my local machine (macbook air M4 16gb RAM 256 SSD). Being more specific it took me for each query something between 10 and 40 seconds to have an answer. 
+
+---
+
+Any questions feel free to reach out or make any PRs!
+Thank you!
+**André Costa Werneck**
+27/06/2025 
