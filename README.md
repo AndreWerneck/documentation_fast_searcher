@@ -4,7 +4,7 @@ This project is a lightweight, modular proof-of-concept (PoC) system designed to
 
 The current implementation uses AWS documentation to simulate this scenario and demonstrates a pipeline that integrates preprocessing, hybrid document retrieval (sparse + dense), and local large language model (LLM) generation.
 
-⸻
+---
 
 ## Project Motivation
 
@@ -58,6 +58,8 @@ Retrieved results are reranked using a cross-encoder model (cross-encoder/ms-mar
 	5.	Prompt Construction + LLM Response
 Top-k reranked chunks are used to form the prompt.
 Generation is handled locally via llama-cpp-python, running quantized Mistral-7B-Instruct in GGUF format from the models/ directory.
+
+---
 
 ### Project Structure
 ```
